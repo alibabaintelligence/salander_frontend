@@ -10,9 +10,13 @@ import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:salander_frontend/classes/analysis_results.dart';
 import 'package:salander_frontend/graphs/velocity_time.dart';
 import 'package:salander_frontend/helpers/message_helper.dart';
+
+import 'providers/chat_provider.dart';
+import 'widgets/salander_assist.dart';
 
 void main() => runApp(const SalanderPlatform());
 
@@ -29,11 +33,14 @@ class SalanderPlatform extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Salander Platform',
-      routes: {
-        '/': (context) => const HomePage(),
-      },
+    return ChangeNotifierProvider(
+      create: (context) => ChatProvider(),
+      child: MaterialApp(
+        title: 'Salander Platform',
+        routes: {
+          '/': (context) => const HomePage(),
+        },
+      ),
     );
   }
 }
@@ -47,6 +54,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Approach> approaches = [];
+
+  bool _isChatPinned = false;
 
   String result = '';
 
@@ -330,434 +339,465 @@ class _HomePageState extends State<HomePage> {
           fontWeight: FontWeight.w500,
           letterSpacing: -0.2,
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              vertical: 70.0,
-              horizontal: 30.0,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 1000),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  // mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Row(
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          children: [
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  vertical: 70.0,
+                  horizontal: 30.0,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 1000),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      // mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Row(
                           children: [
-                            Row(
+                            Column(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Interplanetary Seismic Detection',
-                                  style: TextStyle(
-                                    fontSize: 27,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.25,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4.0),
-                            Text(
-                              'v0.0.1',
-                              style: GoogleFonts.firaCode(
-                                fontSize: 12.0,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Image.asset(
-                              'assets/logo.png',
-                              width: 60.0,
-                            ),
-                            // const SizedBox(height: 10.0),
-                            // const Text(
-                            //   'Salander',
-                            //   style: TextStyle(
-                            //     fontSize: 14.0,
-                            //     fontWeight: FontWeight.w500,
-                            //     letterSpacing: 0.1,
-                            //   ),
-                            // ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 25.0),
-                    // Step 1
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Text(
-                        '1. Upload data file to be tested (.csv/.mseed formats only)',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CupertinoButton(
-                              onPressed: _selectFile,
-                              borderRadius: BorderRadius.circular(15.0),
-                              padding: EdgeInsets.symmetric(
-                                vertical: 4.0,
-                                horizontal: 30.0,
-                              ),
-                              color: Color.fromARGB(255, 21, 21, 21),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.upload_file_rounded,
-                                    size: 19.0,
-                                    color: Color.fromARGB(255, 255, 225, 106),
-                                  ),
-                                  SizedBox(width: 14.0),
-                                  Text(
-                                    'Upload File',
-                                    style: GoogleFonts.sora(
-                                      color: Color.fromARGB(255, 255, 225, 106),
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ...files.map(
-                              (file) => Container(
-                                margin: const EdgeInsets.only(top: 5.0),
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 21, 21, 21),
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12.0,
-                                  horizontal: 25.0,
-                                ),
-                                child: Row(
+                                Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    CupertinoButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          files.remove(file);
-                                        });
-                                      },
-                                      minSize: 0.0,
-                                      padding: EdgeInsets.zero,
-                                      child: const Icon(
-                                        Icons.close_rounded,
-                                        size: 16.0,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(width: 10.0),
-                                    Text(
-                                      file.name,
-                                      style: GoogleFonts.firaCode(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: -0.2,
+                                    const Text(
+                                      'Interplanetary Seismic Detection',
+                                      style: TextStyle(
+                                        fontSize: 27,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.25,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
+                                const SizedBox(height: 4.0),
+                                Text(
+                                  'v0.0.1',
+                                  style: GoogleFonts.firaCode(
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/logo.png',
+                                  width: 60.0,
+                                ),
+                                // const SizedBox(height: 10.0),
+                                // const Text(
+                                //   'Salander',
+                                //   style: TextStyle(
+                                //     fontSize: 14.0,
+                                //     fontWeight: FontWeight.w500,
+                                //     letterSpacing: 0.1,
+                                //   ),
+                                // ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    // Step 2
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Row(
-                        children: [
-                          Text(
-                            '2. Select analysis approach.',
+                        SizedBox(height: 25.0),
+                        // Step 1
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Text(
+                            '1. Upload data file to be tested (.csv/.mseed formats only)',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          Spacer(),
-                        ],
-                      ),
-                    ),
-                    // Cupertino Buttons
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.symmetric(vertical: 5.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ...approachesInfo.map(
-                            (buttonInfo) => Row(
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Column(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 CupertinoButton(
-                                  color: Color.fromARGB(255, 21, 21, 21),
+                                  onPressed: _selectFile,
                                   borderRadius: BorderRadius.circular(15.0),
                                   padding: EdgeInsets.symmetric(
                                     vertical: 4.0,
                                     horizontal: 30.0,
                                   ),
-                                  child: Text(
-                                    buttonInfo['title'],
-                                    style: GoogleFonts.sora(
-                                      color: buttonInfo['color'],
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: -0.2,
+                                  color: Color.fromARGB(255, 21, 21, 21),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.upload_file_rounded,
+                                        size: 19.0,
+                                        color:
+                                            Color.fromARGB(255, 255, 225, 106),
+                                      ),
+                                      SizedBox(width: 14.0),
+                                      Text(
+                                        'Upload File',
+                                        style: GoogleFonts.sora(
+                                          color: Color.fromARGB(
+                                              255, 255, 225, 106),
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ...files.map(
+                                  (file) => Container(
+                                    margin: const EdgeInsets.only(top: 5.0),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          const Color.fromARGB(255, 21, 21, 21),
+                                      borderRadius: BorderRadius.circular(15.0),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0,
+                                      horizontal: 25.0,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CupertinoButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              files.remove(file);
+                                            });
+                                          },
+                                          minSize: 0.0,
+                                          padding: EdgeInsets.zero,
+                                          child: const Icon(
+                                            Icons.close_rounded,
+                                            size: 16.0,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(width: 10.0),
+                                        Text(
+                                          file.name,
+                                          style: GoogleFonts.firaCode(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            letterSpacing: -0.2,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedButtonIndex = buttonInfo['index'];
-                                    });
-                                  },
                                 ),
-                                const SizedBox(width: 10.0),
                               ],
                             ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        // Step 2
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                '2. Select analysis approach.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Spacer(),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    // Info based on selected button
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 25.0,
-                      ),
-                      child: selectedButtonIndex == -1
-                          ? Container() // Empty container if no button is pressed
-                          : buildInfoColumn(
-                              approachesInfo[selectedButtonIndex],
-                            ),
-                    ),
-                    SizedBox(height: 20.0),
-                    // Step 3
-                    Text(
-                      '3. Run and test approach.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ...approaches.map(
-                            (approach) {
-                              final approachInfo = approachesInfo.firstWhere(
-                                (info) => info['approach'] == approach,
-                              );
-
-                              return Container(
-                                margin: const EdgeInsets.only(top: 5.0),
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 21, 21, 21),
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10.0,
-                                  horizontal: 15.0,
-                                ),
-                                child: Row(
+                        ),
+                        // Cupertino Buttons
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(vertical: 5.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ...approachesInfo.map(
+                                (buttonInfo) => Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     CupertinoButton(
+                                      color: Color.fromARGB(255, 21, 21, 21),
+                                      borderRadius: BorderRadius.circular(15.0),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 4.0,
+                                        horizontal: 30.0,
+                                      ),
+                                      child: Text(
+                                        buttonInfo['title'],
+                                        style: GoogleFonts.sora(
+                                          color: buttonInfo['color'],
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
                                       onPressed: () {
-                                        approaches.remove(approach);
-                                        setState(() {});
+                                        setState(() {
+                                          selectedButtonIndex =
+                                              buttonInfo['index'];
+                                        });
                                       },
-                                      minSize: 0.0,
-                                      padding: EdgeInsets.zero,
-                                      child: const Icon(
-                                        Icons.close_rounded,
-                                        size: 16.0,
-                                        color: Colors.white,
-                                      ),
                                     ),
-                                    const SizedBox(width: 5.0),
-                                    Text(
-                                      approachInfo['title'],
-                                      style: GoogleFonts.sora(
-                                        color: approachInfo['color'],
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: -0.2,
-                                      ),
-                                    ),
+                                    const SizedBox(width: 10.0),
                                   ],
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 18.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CupertinoButton(
-                              onPressed: _isAnalysisLoading
-                                  ? null
-                                  : () async {
-                                      if (!_isAnalysisLoading) {
-                                        setState(() {
-                                          _isAnalysisLoading = true;
-                                        });
+                        ),
+                        // Info based on selected button
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 25.0,
+                          ),
+                          child: selectedButtonIndex == -1
+                              ? Container() // Empty container if no button is pressed
+                              : buildInfoColumn(
+                                  approachesInfo[selectedButtonIndex],
+                                ),
+                        ),
+                        SizedBox(height: 20.0),
+                        // Step 3
+                        Text(
+                          '3. Run and test approach.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...approaches.map(
+                                (approach) {
+                                  final approachInfo =
+                                      approachesInfo.firstWhere(
+                                    (info) => info['approach'] == approach,
+                                  );
 
-                                        try {
-                                          // await Future.wait([
-                                          //   ...approaches.map(
-                                          //     (appr) {
-                                          //       print('running approach [' +
-                                          //           appr.name +
-                                          //           "] with file [" +
-                                          //           files[0].name +
-                                          //           "]");
-
-                                          //       return runSoleAnalysis(
-                                          //         files[0],
-                                          //         appr,
-                                          //       );
-                                          //     },
-                                          //   )
-                                          // ]);
-
-                                          print('Starting parallel analysis');
-
-                                          await runParallelAnalysis();
-                                        } catch (err) {
-                                          print(err);
-                                        } finally {
-                                          setState(() {
-                                            _isAnalysisLoading = false;
-                                          });
-                                        }
-                                      }
-                                    },
-                              borderRadius: BorderRadius.circular(15.0),
-                              padding: EdgeInsets.symmetric(
-                                vertical: 4.0,
-                                horizontal: 30.0,
-                              ),
-                              color: _isAnalysisLoading
-                                  ? const Color.fromARGB(255, 32, 32, 32)
-                                  : const Color.fromARGB(255, 21, 21, 21),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.auto_awesome_rounded,
-                                    size: 19.0,
-                                    color: _isAnalysisLoading
-                                        ? Colors.grey
-                                        : Color.fromARGB(255, 255, 225, 106),
-                                  ),
-                                  SizedBox(width: 14.0),
-                                  Text(
-                                    'Run Analysis',
-                                    style: GoogleFonts.sora(
-                                      color: _isAnalysisLoading
-                                          ? Colors.grey
-                                          : Color.fromARGB(255, 255, 225, 106),
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: -0.2,
+                                  return Container(
+                                    margin: const EdgeInsets.only(top: 5.0),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          const Color.fromARGB(255, 21, 21, 21),
+                                      borderRadius: BorderRadius.circular(15.0),
                                     ),
-                                  ),
-                                ],
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10.0,
+                                      horizontal: 15.0,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CupertinoButton(
+                                          onPressed: () {
+                                            approaches.remove(approach);
+                                            setState(() {});
+                                          },
+                                          minSize: 0.0,
+                                          padding: EdgeInsets.zero,
+                                          child: const Icon(
+                                            Icons.close_rounded,
+                                            size: 16.0,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5.0),
+                                        Text(
+                                          approachInfo['title'],
+                                          style: GoogleFonts.sora(
+                                            color: approachInfo['color'],
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w500,
+                                            letterSpacing: -0.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                            if (_isAnalysisLoading)
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(height: 25.0),
-                                  Row(
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 18.0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CupertinoButton(
+                                  onPressed: _isAnalysisLoading
+                                      ? null
+                                      : () async {
+                                          if (!_isAnalysisLoading) {
+                                            setState(() {
+                                              _isAnalysisLoading = true;
+                                            });
+
+                                            try {
+                                              // await Future.wait([
+                                              //   ...approaches.map(
+                                              //     (appr) {
+                                              //       print('running approach [' +
+                                              //           appr.name +
+                                              //           "] with file [" +
+                                              //           files[0].name +
+                                              //           "]");
+
+                                              //       return runSoleAnalysis(
+                                              //         files[0],
+                                              //         appr,
+                                              //       );
+                                              //     },
+                                              //   )
+                                              // ]);
+
+                                              print(
+                                                  'Starting parallel analysis');
+
+                                              await runParallelAnalysis();
+                                            } catch (err) {
+                                              print(err);
+                                            } finally {
+                                              setState(() {
+                                                _isAnalysisLoading = false;
+                                              });
+                                            }
+                                          }
+                                        },
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 4.0,
+                                    horizontal: 30.0,
+                                  ),
+                                  color: _isAnalysisLoading
+                                      ? const Color.fromARGB(255, 32, 32, 32)
+                                      : const Color.fromARGB(255, 21, 21, 21),
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      CupertinoActivityIndicator(
-                                        color: Colors.grey,
-                                        radius: 15.0,
+                                      Icon(
+                                        Icons.auto_awesome_rounded,
+                                        size: 19.0,
+                                        color: _isAnalysisLoading
+                                            ? Colors.grey
+                                            : Color.fromARGB(
+                                                255, 255, 225, 106),
                                       ),
-                                      SizedBox(width: 18.0),
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Analysis running...',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 15.0,
-                                            ),
-                                          ),
-                                          SizedBox(height: 5.0),
-                                          Text(
-                                            'Please be patient, depending on the amount of data\nand type of analysis, this might take a while.',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w300,
-                                              fontSize: 11.0,
-                                            ),
-                                          ),
-                                        ],
-                                      )
+                                      SizedBox(width: 14.0),
+                                      Text(
+                                        'Run Analysis',
+                                        style: GoogleFonts.sora(
+                                          color: _isAnalysisLoading
+                                              ? Colors.grey
+                                              : Color.fromARGB(
+                                                  255, 255, 225, 106),
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                ],
-                              ),
-                            SizedBox(height: 30.0),
+                                ),
+                                if (_isAnalysisLoading)
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(height: 25.0),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          CupertinoActivityIndicator(
+                                            color: Colors.grey,
+                                            radius: 15.0,
+                                          ),
+                                          SizedBox(width: 18.0),
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Analysis running...',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 15.0,
+                                                ),
+                                              ),
+                                              SizedBox(height: 5.0),
+                                              Text(
+                                                'Please be patient, depending on the amount of data\nand type of analysis, this might take a while.',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w300,
+                                                  fontSize: 11.0,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                SizedBox(height: 30.0),
+                              ],
+                            ),
                           ],
+                        ),
+                        const SizedBox(height: 20),
+                        ...analysisResults.map(
+                          (res) => VelocityTimeGraph(
+                            analysisResults: res,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    ...analysisResults.map(
-                      (res) => VelocityTimeGraph(
-                        analysisResults: res,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+            Consumer<ChatProvider>(
+              builder: (context, chatProvider, child) {
+                return Visibility(
+                  visible: chatProvider.isChatVisible,
+                  child: Positioned(
+                    right: 20,
+                    bottom: 20,
+                    child: SalanderAssistChat(
+                      onClose: () => chatProvider.toggleChat(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.chat),
+        onPressed: () => context.read<ChatProvider>().toggleChat(),
       ),
     );
   }
